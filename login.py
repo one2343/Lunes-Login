@@ -228,7 +228,7 @@ def _find_server_id_and_go_server_page(sb: SB) -> Tuple[Optional[str], bool]:
         print(f"🧭 提取到 server_id={server_id}，点击 server-card 跳转...")
         
         # 【修改 1】使用 js=True 进行点击，直接在 DOM 层级触发，无视顶部 Sticky 导航栏的物理遮挡
-        sb.click(SERVER_CARD_LINK_SEL, js=True)
+        sb.js_click(SERVER_CARD_LINK_SEL)
 
         # 【修改 2】弃用对 "Now managing" 的死等。
         # 改为等待基础的 body 加载完成，并额外休眠 3 秒确保 Pterodactyl 面板/图表渲染
