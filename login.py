@@ -203,7 +203,7 @@ def _find_server_id_and_go_server_page(sb: SB) -> Tuple[Optional[str], bool]:
     在登录成功后的页面里：
       - 找到 a.server-card[href^="/servers/"]
       - 提取 server_id
-      - 点击这个 a 进入 server 页（并等待 Now managing）
+      - 点击这个 a 进入 server 页
     返回 (server_id, entered_ok)
     """
     try:
@@ -224,23 +224,29 @@ def _find_server_id_and_go_server_page(sb: SB) -> Tuple[Optional[str], bool]:
         screenshot(sb, f"server_id_extract_failed_{int(time.time())}.png")
         return None, False
 
-    # 进入 server 页面：优先 click（符合你说的“点击 a 标签会跳转”）
     try:
         print(f"🧭 提取到 server_id={server_id}，点击 server-card 跳转...")
-        sb.scroll_to(SERVER_CARD_LINK_SEL)
-        time.sleep(0.3)
-        sb.click(SERVER_CARD_LINK_SEL)
+        
+        # 【修改 1】使用 js=True 进行点击，直接在 DOM 层级触发，无视顶部 Sticky 导航栏的物理遮挡
+        sb.click(SERVER_CARD_LINK_SEL, js=True)
 
-        # 等待 “Now managing” 出现，确认 server 页加载成功
-        sb.wait_for_element_visible(NOW_MANAGING_XPATH, timeout=30)
+        # 【修改 2】弃用对 "Now managing" 的死等。
+        # 改为等待基础的 body 加载完成，并额外休眠 3 秒确保 Pterodactyl 面板/图表渲染
+        sb.wait_for_element_visible("body", timeout=15)
+        time.sleep(3)
+        
         return server_id, True
-    except Exception:
+    except Exception as e:
         # click 失败兜底：直接 open 目标 URL
         try:
             server_url = SERVER_URL_TPL.format(server_id=server_id)
-            print(f"⚠️ 点击跳转失败，改为直接打开：{server_url}")
+            print(f"⚠️ 点击跳转失败，改为直接打开：{server_url} (异常原因: {e})")
             sb.open(server_url)
-            sb.wait_for_element_visible(NOW_MANAGING_XPATH, timeout=30)
+            
+            # 同样不再等 "Now managing"
+            sb.wait_for_element_visible("body", timeout=15)
+            time.sleep(3)
+            
             return server_id, True
         except Exception:
             screenshot(sb, f"goto_server_failed_{int(time.time())}.png")
