@@ -63,3 +63,6 @@ permissions:
 ### main.yml里面修改你的定时任务的执行时间（建议每15天内一定要执行一次登录成功的）
 
 
+感谢 yeye296/auto_login_lunes 提供的灵感与基础支持。
+
+
